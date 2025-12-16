@@ -836,4 +836,70 @@
             const correctionsDiv = document.getElementById('corrections');
             
             const finalScore = Math.round(score * 10) / 10;
-            scoreDiv.textContent = `${finalScore
+            scoreDiv.textContent = `${finalScore}/20`;
+            
+            let feedback = '';
+            if (finalScore >= 18) feedback = '🏆 Excellent! Vous maîtrisez parfaitement les projections orthogonales!';
+            else if (finalScore >= 15) feedback = '👏 Très bien! Vous avez une bonne compréhension.';
+            else if (finalScore >= 12) feedback = '👍 Bien! Continuez à vous entraîner.';
+            else if (finalScore >= 10) feedback = '📚 Passable. Revoyez les bases des projections.';
+            else feedback = '💪 Courage! Reprenez les cours et réessayez.';
+            
+            feedbackDiv.textContent = feedback;
+            
+            if (lastCorrections.length > 0) {
+                correctionsDiv.innerHTML = '<h3 style="margin-bottom: 15px;">Corrections du dernier exercice:</h3>';
+                lastCorrections.forEach(corr => {
+                    const labels = {
+                        face: 'Face',
+                        dessus: 'Dessus',
+                        droite: 'Droite',
+                        gauche: 'Gauche',
+                        dessous: 'Dessous'
+                    };
+                    correctionsDiv.innerHTML += `
+                        <div class="correction-item">
+                            <strong>Position ${labels[corr.position]}:</strong><br>
+                            Votre réponse: ${labels[corr.user] || 'Vide'}<br>
+                            Réponse correcte: ${labels[corr.correct]}
+                        </div>
+                    `;
+                });
+            }
+            
+            resultsDiv.classList.add('show');
+        }
+
+        function resetExercise() {
+            answers = {};
+            const zones = document.querySelectorAll('.drop-zone');
+            zones.forEach(zone => {
+                const card = zone.querySelector('.view-card');
+                if (card) {
+                    document.getElementById('views-bank').appendChild(card);
+                }
+                zone.classList.remove('filled', 'correct', 'incorrect');
+            });
+            
+            document.getElementById('status').textContent = 'En cours...';
+            document.getElementById('status').className = 'exercise-status status-pending';
+        }
+
+        function nextExercise() {
+            currentExercise++;
+            answers = {};
+            document.querySelector('.btn-next').classList.add('hidden');
+            
+            if (renderer) {
+                renderer.dispose();
+                scene = null;
+            }
+            
+            createExerciseUI();
+            setupDragAndDrop();
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -2,189 +2,370 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Exercice de Projections Orthogonales</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projections Orthogonales | Espace Élève</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; background: #f0f0f0; margin: 20px; }
-        .hidden { display: none; }
-        
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --accent: #64748b;
+            --success: #22c55e;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg); 
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1100px;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        .hidden { display: none !important; }
+
         /* Identification */
-        #login-screen { background: white; padding: 20px; border-radius: 8px; max-width: 400px; margin: auto; }
-        
-        /* Layout de l'exercice */
-        #exercise-container { display: flex; flex-direction: column; gap: 20px; }
-        .main-content { display: flex; gap: 20px; align-items: center; }
-        
+        #login-screen { text-align: center; max-width: 400px; margin: auto; }
+        h1 { font-weight: 600; margin-bottom: 30px; color: var(--primary); }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        /* Barre de progression */
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        #progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 10%;
+            transition: width 0.3s ease;
+        }
+
+        /* Layout */
+        .exercise-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
         /* Vue 3D */
-        .view-3d { flex: 2; background: white; padding: 10px; border: 2px solid #333; text-align: center; }
-        .view-3d img { max-width: 100%; height: auto; }
+        .view-3d-container {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .view-3d-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .view-label { font-weight: 600; color: var(--accent); margin-bottom: 15px; }
 
-        /* Grille de dépôt (La Croix) */
-        .drop-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 120px); grid-template-rows: repeat(3, 120px); gap: 10px; justify-content: center; }
-        .drop-zone { border: 2px dashed #999; background: #fff; display: flex; align-items: center; justify-content: center; position: relative; }
-        .drop-zone.hover { background: #e0e0e0; }
-        .label { position: absolute; top: 2px; font-size: 10px; color: #666; }
+        /* Croix de projection */
+        .projection-map {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-template-rows: repeat(3, 120px);
+            gap: 15px;
+            justify-content: center;
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 12px;
+        }
 
-        /* Zone des vignettes */
-        #assets-palette { background: #ddd; padding: 15px; display: flex; gap: 10px; justify-content: center; min-height: 110px; border-radius: 8px; }
-        .draggable-img { width: 100px; height: 100px; cursor: grab; border: 1px solid #000; background: white; }
+        .drop-zone {
+            background: #fff;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .drop-zone.hover { border-color: var(--primary); background: #eff6ff; }
+        .drop-zone span.tag {
+            position: absolute;
+            bottom: -20px;
+            font-size: 10px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Palette de choix */
+        .assets-shelf {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            min-height: 120px;
+        }
+
+        .draggable-img {
+            width: 100px;
+            height: 100px;
+            cursor: grab;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: white;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .draggable-img:active { cursor: grabbing; transform: scale(0.95); }
 
         /* Boutons */
-        .controls { text-align: center; margin-top: 20px; }
-        button { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: var(--primary-hover); }
+        .btn-secondary { background: var(--accent); margin-top: 20px; }
+
+        /* Résultat */
+        #result-screen { text-align: center; }
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            font-size: 2rem;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
+<div class="container">
     <div id="login-screen">
-        <h2>Identification Élève</h2>
-        <input type="text" id="nom" placeholder="Nom" required><br><br>
-        <input type="text" id="prenom" placeholder="Prénom" required><br><br>
-        <input type="text" id="classe" placeholder="Classe" required><br><br>
-        <button onclick="startExercise()">Commencer l'exercice</button>
+        <h1>Plateforme Technique</h1>
+        <p>Entrez vos informations pour débuter la session.</p>
+        <input type="text" id="nom" placeholder="Nom de famille">
+        <input type="text" id="prenom" placeholder="Prénom">
+        <input type="text" id="classe" placeholder="Classe (ex: 3ème B)">
+        <button onclick="startExercise()" style="width: 100%; margin-top: 20px;">Accéder aux exercices</button>
     </div>
 
     <div id="exercise-screen" class="hidden">
-        <h3 id="ex-title">Exercice 1 / 10</h3>
-        
-        <div class="main-content">
-            <div class="view-3d">
-                <p>Vue 3D</p>
-                <img id="img-3d" src="" alt="Vue 3D">
-            </div>
-
-            <div class="drop-grid">
-                <div></div> <div class="drop-zone" data-expected="dessus"><span class="label">DESSUS</span></div>
-                <div></div> <div class="drop-zone" data-expected="droite"><span class="label">DROITE</span></div>
-                <div class="drop-zone" data-expected="face"><span class="label">FACE</span></div>
-                <div class="drop-zone" data-expected="gauche"><span class="label">GAUCHE</span></div>
-                
-                <div></div> <div class="drop-zone" data-expected="dessous"><span class="label">DESSOUS</span></div>
-                <div></div> </div>
+        <div class="progress-bar"><div id="progress-fill"></div></div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="ex-title">Exercice 1</h2>
+            <span id="step-counter" style="color: var(--accent)">1 / 10</span>
         </div>
 
-        <h4>Vues à placer (Glisser-Déposer) :</h4>
-        <div id="assets-palette">
+        <div class="exercise-grid">
+            <div class="view-3d-container">
+                <span class="view-label">VUE ISOMÉTRIQUE (3D)</span>
+                <img id="img-3d" src="" alt="3D View">
             </div>
 
-        <div class="controls">
-            <button id="next-btn" onclick="nextStep()">Valider et Suivant</button>
+            <div class="projection-map">
+                <div></div>
+                <div class="drop-zone" data-expected="dessus"><span class="tag">DESSUS</span></div>
+                <div></div>
+                
+                <div class="drop-zone" data-expected="droite"><span class="tag">DROITE</span></div>
+                <div class="drop-zone" data-expected="face"><span class="tag">FACE</span></div>
+                <div class="drop-zone" data-expected="gauche"><span class="tag">GAUCHE</span></div>
+                
+                <div></div>
+                <div class="drop-zone" data-expected="dessous"><span class="tag">DESSOUS</span></div>
+                <div></div>
+            </div>
+        </div>
+
+        <p class="view-label">VUES DISPONIBLES</p>
+        <div id="assets-palette" class="assets-shelf"></div>
+
+        <div style="text-align: right; margin-top: 30px;">
+            <button onclick="nextStep()">Valider la réponse →</button>
         </div>
     </div>
 
     <div id="result-screen" class="hidden">
-        <h2>Résultats</h2>
-        <p id="final-score"></p>
-        <div id="correction-log"></div>
-        <button onclick="downloadPDF()">Télécharger mon PDF</button>
+        <h1>Session terminée</h1>
+        <div class="score-circle">
+            <span id="final-score-val">0</span>
+            <span style="font-size: 0.8rem; font-weight: normal;">sur 20</span>
+        </div>
+        <p id="student-name" style="font-weight: 600;"></p>
+        <div id="correction-list" style="max-width: 600px; margin: 20px auto; text-align: left;"></div>
+        <button onclick="downloadPDF()">Exporter les résultats (PDF)</button>
     </div>
+</div>
 
-    <script>
-        let currentEx = 1;
-        let score = 0;
-        let userResults = [];
-        const totalEx = 10;
-        const viewTypes = ['face', 'gauche', 'droite', 'dessus', 'dessous'];
+<script>
+    let currentEx = 1;
+    let score = 0;
+    let userResults = [];
+    const totalEx = 10;
+    const viewTypes = ['face', 'gauche', 'droite', 'dessus', 'dessous'];
 
-        function startExercise() {
-            if(!document.getElementById('nom').value) return alert("Entrez votre nom");
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('exercise-screen').classList.remove('hidden');
+    function startExercise() {
+        const n = document.getElementById('nom').value;
+        const p = document.getElementById('prenom').value;
+        if(!n || !p) return alert("Veuillez remplir votre identité.");
+        
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('exercise-screen').classList.remove('hidden');
+        loadExercise();
+    }
+
+    function loadExercise() {
+        // Mise à jour interface
+        document.getElementById('ex-title').innerText = `Pièce Mécanique n°${currentEx}`;
+        document.getElementById('step-counter').innerText = `${currentEx} / ${totalEx}`;
+        document.getElementById('progress-fill').style.width = `${(currentEx/totalEx)*100}%`;
+        document.getElementById('img-3d').src = `assets/3d${currentEx}.png`;
+        
+        // Nettoyage zones
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            const tag = zone.getAttribute('data-expected').toUpperCase();
+            zone.innerHTML = `<span class="tag">${tag}</span>`;
+            zone.classList.remove('hover');
+        });
+
+        // Palette
+        const palette = document.getElementById('assets-palette');
+        palette.innerHTML = '';
+        let shuffled = [...viewTypes].sort(() => Math.random() - 0.5);
+        
+        shuffled.forEach(type => {
+            let img = document.createElement('img');
+            img.src = `assets/${type}${currentEx}.png`;
+            img.className = 'draggable-img';
+            img.id = type; 
+            img.draggable = true;
+            img.addEventListener('dragstart', (e) => e.dataTransfer.setData("text", e.target.id));
+            palette.appendChild(img);
+        });
+
+        setupDragAndDrop();
+    }
+
+    function setupDragAndDrop() {
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('hover'); };
+            zone.ondragleave = () => zone.classList.remove('hover');
+            zone.ondrop = (e) => {
+                e.preventDefault();
+                zone.classList.remove('hover');
+                const id = e.dataTransfer.getData("text");
+                const img = document.getElementById(id);
+                if (zone.querySelector('img')) return; 
+                zone.appendChild(img);
+            };
+        });
+    }
+
+    function nextStep() {
+        let errors = [];
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            const expected = zone.getAttribute('data-expected');
+            const img = zone.querySelector('img');
+            if (!img || img.id !== expected) errors.push(expected);
+        });
+
+        if (errors.length === 0) score += 2;
+        userResults.push({ex: currentEx, errors: errors});
+
+        if (currentEx < totalEx) {
+            currentEx++;
             loadExercise();
+        } else {
+            showFinalResults();
         }
+    }
 
-        function loadExercise() {
-            document.getElementById('ex-title').innerText = `Exercice ${currentEx} / ${totalEx}`;
-            document.getElementById('img-3d').src = `assets/3d${currentEx}.png`;
-            
-            // Réinitialiser les zones de dépôt
-            document.querySelectorAll('.drop-zone').forEach(zone => {
-                zone.innerHTML = `<span class="label">${zone.getAttribute('data-expected').toUpperCase()}</span>`;
-            });
+    function showFinalResults() {
+        document.getElementById('exercise-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        document.getElementById('final-score-val').innerText = score;
+        document.getElementById('student-name').innerText = 
+            `${document.getElementById('prenom').value} ${document.getElementById('nom').value} - ${document.getElementById('classe').value}`;
+        
+        const list = document.getElementById('correction-list');
+        userResults.forEach(r => {
+            const div = document.createElement('div');
+            div.style.padding = "8px";
+            div.style.borderBottom = "1px solid #eee";
+            div.innerHTML = `<strong>Ex ${r.ex} :</strong> ${r.errors.length === 0 ? 
+                '<span style="color:green">Réussi</span>' : 
+                '<span style="color:red">Erreur sur: ' + r.errors.join(', ') + '</span>'}`;
+            list.appendChild(div);
+        });
+    }
 
-            // Mélanger et charger les vignettes
-            const palette = document.getElementById('assets-palette');
-            palette.innerHTML = '';
-            
-            let shuffled = [...viewTypes].sort(() => Math.random() - 0.5);
-            shuffled.forEach(type => {
-                let img = document.createElement('img');
-                img.src = `assets/${type}${currentEx}.png`;
-                img.className = 'draggable-img';
-                img.id = type; 
-                img.draggable = true;
-                img.ondragstart = (e) => e.dataTransfer.setData("text", e.target.id);
-                palette.appendChild(img);
-            });
-            setupDropZones();
-        }
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const n = document.getElementById('nom').value;
+        const p = document.getElementById('prenom').value;
+        const c = document.getElementById('classe').value;
 
-        function setupDropZones() {
-            document.querySelectorAll('.drop-zone').forEach(zone => {
-                zone.ondragover = (e) => e.preventDefault();
-                zone.ondrop = (e) => {
-                    e.preventDefault();
-                    let data = e.dataTransfer.getData("text");
-                    let draggedImg = document.getElementById(data);
-                    if (zone.children.length > 1) return; // Une seule image par zone
-                    zone.appendChild(draggedImg);
-                };
-            });
-        }
+        doc.setFont("helvetica", "bold");
+        doc.text(`RÉSULTATS DES EXERCICES DE PROJECTION`, 20, 20);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Élève : ${p} ${n}`, 20, 30);
+        doc.text(`Classe : ${c}`, 20, 40);
+        doc.text(`Note finale : ${score}/20`, 20, 50);
+        
+        let y = 70;
+        userResults.forEach(r => {
+            let txt = `Exercice ${r.ex} : ${r.errors.length === 0 ? "Correct" : "Erreurs : " + r.errors.join(', ')}`;
+            doc.text(txt, 20, y);
+            y += 10;
+        });
 
-        function nextStep() {
-            // Correction de l'exercice actuel
-            let errors = [];
-            document.querySelectorAll('.drop-zone').forEach(zone => {
-                let expected = zone.getAttribute('data-expected');
-                let imgInside = zone.querySelector('img');
-                if (!imgInside || imgInside.id !== expected) {
-                    errors.push(expected);
-                }
-            });
+        doc.save(`Resultats_${n}_${p}.pdf`);
+    }
+</script>
 
-            if (errors.length === 0) score += 2; // 2 points par exercice sans faute
-
-            userResults.push({ex: currentEx, errors: errors});
-
-            if (currentEx < totalEx) {
-                currentEx++;
-                loadExercise();
-            } else {
-                showResults();
-            }
-        }
-
-        function showResults() {
-            document.getElementById('exercise-screen').classList.add('hidden');
-            document.getElementById('result-screen').classList.remove('hidden');
-            document.getElementById('final-score').innerText = `Note finale : ${score} / 20`;
-            
-            let log = document.getElementById('correction-log');
-            userResults.forEach(res => {
-                let p = document.createElement('p');
-                p.innerText = `Ex ${res.ex} : ${res.errors.length === 0 ? "Parfait" : "Erreurs sur : " + res.errors.join(', ')}`;
-                log.appendChild(p);
-            });
-        }
-
-        async function downloadPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            let nom = document.getElementById('nom').value;
-            let prenom = document.getElementById('prenom').value;
-            
-            doc.text(`Rapport d'exercice - ${nom} ${prenom}`, 10, 10);
-            doc.text(`Note finale : ${score}/20`, 10, 20);
-            
-            let y = 30;
-            userResults.forEach(res => {
-                doc.text(`Exercice ${res.ex}: ${res.errors.length === 0 ? "OK" : "Erreurs: " + res.errors.join(', ')}`, 10, y);
-                y += 10;
-            });
-
-            doc.save(`resultat_${nom}.pdf`);
-        }
-    </script>
 </body>
 </html>

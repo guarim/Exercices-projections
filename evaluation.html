@@ -814,4 +814,207 @@
                 } else if (viewType === "gauche") {
                     ctx.fillRect(30, 35, 60, 50);
                     ctx.strokeRect(30, 35, 60, 50);
-                    ctx.setLineDash
+                    ctx.setLineDash([5, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(30, 52);
+                    ctx.lineTo(90, 52);
+                    ctx.moveTo(30, 68);
+                    ctx.lineTo(90, 68);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                } else if (viewType === "dessous") {
+                    ctx.fillRect(30, 35, 60, 50);
+                    ctx.strokeRect(30, 35, 60, 50);
+                    ctx.setLineDash([5, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(50, 35);
+                    ctx.lineTo(50, 85);
+                    ctx.moveTo(70, 35);
+                    ctx.lineTo(70, 85);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+        }
+
+        function setupDragAndDrop() {
+            const cards = document.querySelectorAll('.view-card');
+            const zones = document.querySelectorAll('.drop-zone');
+            
+            cards.forEach(card => {
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragend', handleDragEnd);
+            });
+            
+            zones.forEach(zone => {
+                zone.addEventListener('dragover', handleDragOver);
+                zone.addEventListener('drop', handleDrop);
+                zone.addEventListener('dragleave', handleDragLeave);
+            });
+        }
+
+        let draggedElement = null;
+
+        function handleDragStart(e) {
+            draggedElement = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            this.classList.add('drag-over');
+            return false;
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) e.stopPropagation();
+            e.preventDefault();
+            
+            this.classList.remove('drag-over');
+            
+            if (draggedElement) {
+                const zoneView = this.dataset.view;
+                const cardView = draggedElement.dataset.view;
+                
+                const existingCard = this.querySelector('.view-card');
+                if (existingCard) {
+                    document.getElementById('views-bank').appendChild(existingCard);
+                }
+                
+                this.appendChild(draggedElement);
+                this.classList.add('filled');
+                
+                answers[zoneView] = cardView;
+            }
+            
+            return false;
+        }
+
+        function checkAnswers() {
+            const positions = ['face', 'dessus', 'droite', 'gauche', 'dessous'];
+            let correct = 0;
+            let total = positions.length;
+            const corrections = [];
+            
+            positions.forEach(position => {
+                const zone = document.querySelector(`[data-view="${position}"]`);
+                const userAnswer = answers[position];
+                const correctAnswer = position;
+                
+                if (userAnswer === correctAnswer) {
+                    correct++;
+                    zone.classList.add('correct');
+                    zone.classList.remove('incorrect');
+                } else {
+                    zone.classList.add('incorrect');
+                    zone.classList.remove('correct');
+                    corrections.push({
+                        position: position,
+                        correct: correctAnswer,
+                        user: userAnswer || "vide"
+                    });
+                }
+            });
+            
+            const status = document.getElementById('status');
+            if (correct === total) {
+                status.textContent = `✓ Parfait! ${correct}/${total}`;
+                status.className = 'exercise-status status-correct';
+            } else {
+                status.textContent = `✗ ${correct}/${total} correctes`;
+                status.className = 'exercise-status status-incorrect';
+            }
+            
+            score += (correct / total) * (20 / exercises.length);
+            
+            if (currentExercise === exercises.length - 1) {
+                showResults(corrections);
+            } else {
+                document.querySelector('.btn-next').classList.remove('hidden');
+            }
+        }
+
+        function showResults(lastCorrections) {
+            const resultsDiv = document.getElementById('results');
+            const scoreDiv = document.getElementById('score');
+            const feedbackDiv = document.getElementById('feedback');
+            const correctionsDiv = document.getElementById('corrections');
+            
+            const finalScore = Math.round(score * 10) / 10;
+            scoreDiv.textContent = `${finalScore}/20`;
+            
+            let feedback = '';
+            if (finalScore >= 18) feedback = '🏆 Excellent! Vous maîtrisez parfaitement les projections orthogonales!';
+            else if (finalScore >= 15) feedback = '👏 Très bien! Vous avez une bonne compréhension.';
+            else if (finalScore >= 12) feedback = '👍 Bien! Continuez à vous entraîner.';
+            else if (finalScore >= 10) feedback = '📚 Passable. Revoyez les bases des projections.';
+            else feedback = '💪 Courage! Reprenez les cours et réessayez.';
+            
+            feedbackDiv.textContent = feedback;
+            
+            if (lastCorrections.length > 0) {
+                correctionsDiv.innerHTML = '<h3 style="margin-bottom: 15px;">Corrections du dernier exercice:</h3>';
+                lastCorrections.forEach(corr => {
+                    const labels = {
+                        face: 'Face',
+                        dessus: 'Dessus',
+                        droite: 'Droite',
+                        gauche: 'Gauche',
+                        dessous: 'Dessous'
+                    };
+                    correctionsDiv.innerHTML += `
+                        <div class="correction-item">
+                            <strong>Position ${labels[corr.position]}:</strong><br>
+                            Votre réponse: ${labels[corr.user] || 'Vide'}<br>
+                            Réponse correcte: ${labels[corr.correct]}
+                        </div>
+                    `;
+                });
+            }
+            
+            resultsDiv.classList.add('show');
+        }
+
+        function resetExercise() {
+            answers = {};
+            const zones = document.querySelectorAll('.drop-zone');
+            zones.forEach(zone => {
+                const card = zone.querySelector('.view-card');
+                if (card) {
+                    document.getElementById('views-bank').appendChild(card);
+                }
+                zone.classList.remove('filled', 'correct', 'incorrect');
+            });
+            
+            document.getElementById('status').textContent = 'En cours...';
+            document.getElementById('status').className = 'exercise-status status-pending';
+        }
+
+        function nextExercise() {
+            currentExercise++;
+            answers = {};
+            document.querySelector('.btn-next').classList.add('hidden');
+            
+            if (renderer) {
+                renderer.dispose();
+                scene = null;
+            }
+            
+            createExerciseUI();
+            setupDragAndDrop();
+        }
+
+        init();
+    </script>
+</body>
+</html>
